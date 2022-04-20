@@ -1,7 +1,10 @@
 ﻿using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
+using Autodesk.Revit.DB.Plumbing;
 using Autodesk.Revit.UI;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,25 +23,37 @@ namespace RevitAPI4
             UIDocument uidoc = uiapp.ActiveUIDocument;
             Document doc = uidoc.Document;
 
-            string wallInfo = string.Empty;
+            string pipeInfo = string.Empty;
 
-            var walls = new FilteredElementCollector(doc)
-                .OfCategory(BuiltInCategory.OST_Walls)
+            var pipes = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_PipeCurves)
                 .WhereElementIsNotElementType()
-                .Cast<Wall>()
+                .Cast<Pipe>()
                 .ToList();
 
-            foreach (Wall wall in walls)
+            string excelPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "pipes.xlsx");
+            using (FileStream stream = new FileStream(excelPath, FileMode.Create, FileAccess.Write))
             {
-                string wallName = wall.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString();
-                double wallVolume = wall.get_Parameter(BuiltInParameter.HOST_VOLUME_COMPUTED).AsDouble();
-                
-                wallInfo += $"{wallName} \t { wallVolume} {Environment.NewLine}";
-            }
-            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string csvPath = Path.Combine(desktopPath, "wallInfo.csv");
-            File.WriteAllText(csvPath, wallInfo);
+                IWorkbook workbook = new XSSFWorkbook();
+                ISheet sheet = workbook.CreateSheet("Лист1");
 
+                int rowIndex = 0;
+                foreach (var pipe in pipes)
+                {
+                    string pipeName = pipe.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString();
+                    string pipeOuter = pipe.get_Parameter(BuiltInParameter.RBS_PIPE_OUTER_DIAMETER).AsString();
+                    string pipeInner = pipe.get_Parameter(BuiltInParameter.RBS_PIPE_INNER_DIAM_PARAM).AsString();
+                    string pipeLength = pipe.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH).AsString();
+                    sheet.SetCellValue(rowIndex, columnIndex: 0, pipeName);
+                    sheet.SetCellValue(rowIndex, columnIndex: 1, pipeOuter);
+                    sheet.SetCellValue(rowIndex, columnIndex: 2, pipeInner);
+                    sheet.SetCellValue(rowIndex, columnIndex: 3, pipeLength);
+                    rowIndex++;
+                }
+                workbook.Write(stream);
+                workbook.Close();
+            }
+            System.Diagnostics.Process.Start(excelPath);
             return Result.Succeeded;
         }
     }

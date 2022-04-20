@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+	<AddIn Type="Command">
+		<Assembly>"D:\RevitAPITrainig\RevitAPI4.dll"</Assembly>
+		<AddInId>EBD58A53-AC27-432E-BB48-DC35035F0450</AddInId>
+		<FullClassName>RevitAPI4.Main</FullClassName>
+		<VendorId>ADSK</VendorId>
+		<Text>Стены</Text>
+	</AddIn>
+</RevitAddIns>
